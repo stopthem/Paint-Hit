@@ -24,7 +24,7 @@ public class Circle5 : MonoBehaviour
             "y",
             1f,
             "time",
-            BallHandler.rotationTime,
+            GameManager.rotationTime,
             "easetype",
             iTween.EaseType.easeInOutQuad,
             "looptype",

@@ -20,6 +20,6 @@ public class Circle3 : MonoBehaviour
 
     private void Update()
     {
-        transform.Rotate(Vector3.down * Time.deltaTime * (BallHandler.rotationSpeed + 20f));
+        transform.Rotate(Vector3.down * Time.deltaTime * (GameManager.rotationSpeed + 20f));
     }
 }

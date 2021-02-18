@@ -5,33 +5,34 @@ using UnityEngine;
 
 public class ColorChanger : MonoBehaviour
 {
-    private Circle circle;
+    private Circle m_circle;
+    private GameManager m_gameManager;
+    private void Awake()
+    {
+        m_gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+    }
     private void OnCollisionEnter(Collision other)
     {
-        circle = other.gameObject.GetComponent<Circle>();
-        if (other.gameObject.CompareTag("red"))
+        m_circle = other.gameObject.GetComponent<Circle>();
+        if (other.gameObject.CompareTag("hit") || other.gameObject.GetComponent<MeshRenderer>().enabled == true)
         {
             other.gameObject.GetComponent<MeshRenderer>().enabled = true;
-            other.gameObject.GetComponent<MeshRenderer>().material.color = Color.green;
             base.GetComponent<Rigidbody>().AddForce(Vector3.down * 50, ForceMode.Impulse);
             Destroy(base.gameObject, .5f);
         }
         else
         {
-            GameObject splash = Instantiate(Resources.Load("splash1")) as GameObject;
-            splash.transform.parent = other.gameObject.transform;
-            Destroy(splash, .1f);
-            other.gameObject.name = "color";
-            other.gameObject.tag = "red";
-            StartCoroutine(ChangeColorRoutine(other.gameObject));
+            m_gameManager.circleHits++;
+            other.gameObject.name = "hitbyball";
+            other.gameObject.tag = "hit";
+            ChangeColor(other.gameObject);
         }
     }
 
-    private IEnumerator ChangeColorRoutine(GameObject g)
+    private void ChangeColor(GameObject g)
     {
-        yield return new WaitForSeconds(.1f);
         g.gameObject.GetComponent<MeshRenderer>().enabled = true;
-        g.gameObject.GetComponent<MeshRenderer>().material.color = BallHandler.oneColor;
+        g.gameObject.GetComponent<MeshRenderer>().material.color = GameManager.oneColor;
         Destroy(base.gameObject);
     }
 }

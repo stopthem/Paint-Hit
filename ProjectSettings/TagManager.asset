@@ -5,8 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - circle
-  - red
   - ball
+  - hit
   layers:
   - Default
   - TransparentFX
