@@ -8,27 +8,19 @@ public class LevelHandler : MonoBehaviour
     public static int currentLevel;
     public static int ballCount;
     public static int totalCircles;
-    public static int maxBallCount;
+    public static int hitPoint;
 
     public static Color currentColor;
 
     private void Awake()
     {
         PlayerPrefs.SetInt("C_Level", 1);
-
-        if (PlayerPrefs.GetInt("FirstTime1", 0) == 0)
-        {
-            PlayerPrefs.SetInt("FirstTime1", 1);
-            PlayerPrefs.SetInt("C_Level", 1);
-        }
-
         UpgradeLevel();
     }
 
     private void Update()
     {
         UpgradeLevel();
-        
     }
 
     private void UpgradeLevel()
@@ -37,32 +29,32 @@ public class LevelHandler : MonoBehaviour
 
         if (currentLevel == 1)
         {
-            ballCount = 2;
-            maxBallCount = ballCount;
+            ballCount = 3;
+            hitPoint = 2;
             totalCircles = 2;
         }
         if (currentLevel == 2)
         {
-            ballCount = 3;
-            maxBallCount = ballCount;
-            totalCircles = 3;
+            ballCount = 5;
+            hitPoint = 3;
+            totalCircles = 4;
         }
         if (currentLevel == 3)
         {
-            ballCount = 6;
-            maxBallCount = ballCount;
-            totalCircles = 5;
+            ballCount = 8;
+            hitPoint = 5;
+            totalCircles = 6;
         }
         if (currentLevel == 4)
         {
-            ballCount = 9;
-            maxBallCount = ballCount;
+            ballCount = 10;
+            hitPoint = 7;
             totalCircles = 8;
         }
         if (currentLevel == 5)
         {
             ballCount = 10;
-            maxBallCount = ballCount;
+            hitPoint = 8;
             totalCircles = 10;
         }
     }
