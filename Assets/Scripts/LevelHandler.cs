@@ -57,5 +57,9 @@ public class LevelHandler : MonoBehaviour
             hitPoint = 8;
             totalCircles = 10;
         }
+        if (currentLevel == 6)
+        {
+            currentLevel = 1;
+        }
     }
 }

@@ -10,8 +10,11 @@ public class UIHandler : MonoBehaviour
     public TextMeshProUGUI totalCirclesText;
     public TextMeshProUGUI levelNumberText;
 
+    public TextMeshProUGUI failLevelNumberText;
+
     public GameObject levelCompleteScreen;
     public GameObject gamePlayScreen;
+    public GameObject failScreen;
     public GameObject dummyBall;
     public GameObject completeEffect;
 
@@ -22,6 +25,7 @@ public class UIHandler : MonoBehaviour
     [HideInInspector] public bool isLevelOver;
 
     public float timeToWaitAfterLevel;
+    public float timeToWaitAfterRestart;
 
     private GameManager m_gameManager;
 
@@ -55,7 +59,35 @@ public class UIHandler : MonoBehaviour
     public void LevelOver()
     {
         isLevelOver = true;
-        StartCoroutine(LevelOverRoutine(timeToWaitAfterLevel));
+        StartCoroutine(LevelCompletedRoutine(timeToWaitAfterLevel));
+    }
+
+    public void LevelFailed()
+    {
+        StartCoroutine(LevelFailedRoutine(timeToWaitAfterLevel / 2));
+    }
+
+    private IEnumerator LevelFailedRoutine(float timeToWaitAfterFail)
+    {
+
+        yield return new WaitForSeconds(timeToWaitAfterFail);
+
+        Hide(dummyBall);
+
+        Show(failScreen);
+        failLevelNumberText.text = LevelHandler.currentLevel.ToString();
+        isLevelOver = false;
+    }
+
+    public IEnumerator RestartLevelRoutine()
+    {
+
+        yield return new WaitForSeconds(timeToWaitAfterRestart);
+
+        Hide(failScreen);
+
+        Show(gamePlayScreen);
+        Show(dummyBall);
     }
 
     public IEnumerator NewLevelScreen()
@@ -68,7 +100,7 @@ public class UIHandler : MonoBehaviour
         Show(dummyBall);
     }
 
-    private IEnumerator LevelOverRoutine(float wait)
+    private IEnumerator LevelCompletedRoutine(float wait)
     {
         GameManager.CircleEnd();
 
@@ -77,11 +109,8 @@ public class UIHandler : MonoBehaviour
         yield return new WaitForSeconds(wait);
 
         nextLevelButton.gameObject.SetActive(true);
-        GameObject[] circleArray = GameObject.FindGameObjectsWithTag("circle");
-        foreach (var circle in circleArray)
-        {
-            Destroy(circle);
-        }
+
+        GameManager.DestroyCircles();
 
         completeEffect.SetActive(false);
         Hide(gamePlayScreen);

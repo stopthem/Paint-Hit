@@ -6,11 +6,9 @@ public class Ball : MonoBehaviour
 {
     private GameManager m_gameManager;
     private float m_speed = 100;
-    
 
-    public bool sameHit = false;
     public bool canShoot = true;
-    
+
     public GameObject ball;
 
     private void Awake()
@@ -26,13 +24,15 @@ public class Ball : MonoBehaviour
         }
     }
 
-    public void HitBall()
+    private void HitBall()
     {
         m_gameManager.ballsCount--;
 
-        GameObject ballToThrow = Instantiate<GameObject>(ball, new Vector3(0, 0, -8), Quaternion.identity);
-        ballToThrow.GetComponent<MeshRenderer>().material.color = GameManager.oneColor;
-        ballToThrow.GetComponent<Rigidbody>().AddForce(Vector3.forward * m_speed, ForceMode.Impulse);
-
+        if (ball != null)
+        {
+            GameObject ballToThrow = Instantiate<GameObject>(ball, new Vector3(0, 0, -8), Quaternion.identity);
+            ballToThrow.GetComponent<MeshRenderer>().material.color = GameManager.oneColor;
+            ballToThrow.GetComponent<Rigidbody>().AddForce(Vector3.forward * m_speed, ForceMode.Impulse);
+        }
     }
 }

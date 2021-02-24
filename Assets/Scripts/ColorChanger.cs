@@ -7,9 +7,11 @@ public class ColorChanger : MonoBehaviour
 {
     private Circle m_circle;
     private GameManager m_gameManager;
+    private AudioManager m_audioManager;
     private void Awake()
     {
         m_gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        m_audioManager = GameObject.Find("GameManager").GetComponent<AudioManager>();
     }
     private void OnCollisionEnter(Collision other)
     {
@@ -22,6 +24,7 @@ public class ColorChanger : MonoBehaviour
         }
         else
         {
+            m_audioManager.PlayHitSound();
             m_gameManager.circleHits++;
             other.gameObject.name = "hitbyball";
             other.gameObject.tag = "hit";

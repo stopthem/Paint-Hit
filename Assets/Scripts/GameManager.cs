@@ -5,16 +5,18 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public static float rotationSpeed = 130f;
+    public static float rotationSpeed = 150f;
     public static float rotationTime = 3f;
     public static int currentCircleNo;
     public static Color oneColor;
 
     [HideInInspector] public int circleHits;
-    private int levelCount;
+    private int levelCount = 1;
 
     private Ball m_ballScript;
-    private UIHandler uiHandler;
+    private UIHandler m_uiHandler;
+    private Background m_background;
+    private AudioManager m_audioManager;
 
     [HideInInspector] public int ballsCount;
     private int m_circleNo;
@@ -24,16 +26,18 @@ public class GameManager : MonoBehaviour
     public Material material;
 
     private bool spawnedLevel;
+    private bool isFailed;
 
     private void Awake()
     {
         m_ballScript = GameObject.Find("DummyBall").GetComponent<Ball>();
-        uiHandler = GameObject.Find("UICanvas").GetComponent<UIHandler>();
+        m_uiHandler = GameObject.Find("UICanvas").GetComponent<UIHandler>();
+        m_background = GameObject.Find("BackgroundCanvas").GetComponent<Background>();
+        m_audioManager = GetComponent<AudioManager>();
     }
 
     private void Start()
     {
-        levelCount++;
         HandleStart();
     }
 
@@ -44,26 +48,66 @@ public class GameManager : MonoBehaviour
 
     private void CheckLevel()
     {
-
-        if (LevelHandler.totalCircles == m_circleNo && circleHits == LevelHandler.hitPoint && !uiHandler.isLevelOver)
+        if (LevelHandler.totalCircles == m_circleNo && !m_uiHandler.isLevelOver)
         {
-            uiHandler.LevelOver();
+            m_uiHandler.isLevelOver = true;
+            StartCoroutine(IsLevelCompletedRoutine());
         }
 
-        if (circleHits == LevelHandler.hitPoint && !spawnedLevel && !uiHandler.isLevelOver)
+        if (ballsCount == 0 && !isFailed)
+        {
+            isFailed = true;
+            m_ballScript.canShoot = false;
+            StartCoroutine(IsLevelFailedRoutine());
+        }
+
+        if (circleHits == LevelHandler.hitPoint && !spawnedLevel && !m_uiHandler.isLevelOver)
         {
             SpawnLevel();
         }
     }
 
+    private IEnumerator IsLevelCompletedRoutine()
+    {
+        yield return new WaitForSeconds(.5f);
+        if (circleHits == LevelHandler.hitPoint)
+        {
+            m_ballScript.canShoot = false;
+            m_uiHandler.LevelOver();
+            m_audioManager.PlayCompleteSound();
+        }
+        else
+        {
+            m_uiHandler.isLevelOver = false;
+        }
+    }
+
+    private IEnumerator IsLevelFailedRoutine()
+    {
+        yield return new WaitForSeconds(.3f);
+        if (circleHits < LevelHandler.hitPoint)
+        {
+            KillTween(true);
+            m_audioManager.PlayFailSound();
+
+            m_ballScript.canShoot = false;
+            m_uiHandler.LevelFailed();
+        }
+        else
+        {
+            isFailed = false;
+            m_ballScript.canShoot = true;
+        }
+    }
+
     private void SpawnLevel()
     {
-        circleHits = 0;
-        StartCoroutine(MakeANewCircleCoroutine(.4f));
+        StartCoroutine(MakeANewCircleCoroutine(.3f));
     }
 
     private void HandleStart()
     {
+        spawnedLevel = false;
         ballsCount = LevelHandler.ballCount;
         m_circleNo = 1;
         m_changingColors = ColorScript.colorArray;
@@ -76,27 +120,32 @@ public class GameManager : MonoBehaviour
     public IEnumerator MakeANewCircleCoroutine(float timeToWait)
     {
         m_ballScript.canShoot = false;
+        spawnedLevel = false;
         yield return new WaitForSeconds(timeToWait);
 
-        spawnedLevel = true;
-        MakeNewCircle();
-
-        yield return new WaitForSeconds(timeToWait);
+        if (spawnedLevel == false)
+        {
+            MakeNewCircle();
+        }
         ballsCount = LevelHandler.ballCount;
+        yield return new WaitForSeconds(timeToWait);
+        spawnedLevel = false;
+        circleHits = 0;
+
         m_ballScript.canShoot = true;
     }
 
     private void MakeNewCircle()
     {
-        spawnedLevel = false;
-
+        spawnedLevel = true;
         CircleEnd();
 
         GameObject[] circleArray = GameObject.FindGameObjectsWithTag("circle");
-
-        foreach (var target in circleArray)
+        if (circleArray != null)
         {
-            iTween.MoveBy(target, iTween.Hash(new object[]{
+            foreach (var target in circleArray)
+            {
+                iTween.MoveBy(target, iTween.Hash(new object[]{
                 "y",
                 -2.98f,
                 "easetype",
@@ -104,11 +153,9 @@ public class GameManager : MonoBehaviour
                 "time",
                 .5
             }));
+            }
         }
-
         m_circleNo++;
-        currentCircleNo = m_circleNo;
-
         CreateCircle();
 
         HurdlesColorChange();
@@ -119,25 +166,16 @@ public class GameManager : MonoBehaviour
         DefineCircleColor();
 
         GameObject circleToSpawn = Instantiate(Resources.Load("round" + UnityEngine.Random.Range(1, 4).ToString())) as GameObject;
-        circleToSpawn.transform.position = new Vector3(0, 20, 23);
-        circleToSpawn.name = "Circle" + m_circleNo;
-
-        currentCircleNo = m_circleNo;
-
-        LevelHandler.currentColor = oneColor;
-
-        HurdlesColorChange();
-    }
-
-    private void HurdlesColorChange()
-    {
-        GameObject circle = GameObject.Find("Circle" + m_circleNo);
-        for (int i = 0; i < 24; i++)
+        if (circleToSpawn != null)
         {
-            if (circle.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>())
-            {
-                circle.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().material.color = oneColor;
-            }
+            circleToSpawn.transform.position = new Vector3(0, 20, 23);
+            circleToSpawn.name = "Circle" + m_circleNo;
+
+            currentCircleNo = m_circleNo;
+
+            LevelHandler.currentColor = oneColor;
+
+            HurdlesColorChange();
         }
     }
 
@@ -146,6 +184,21 @@ public class GameManager : MonoBehaviour
         int random = UnityEngine.Random.Range(1, 8);
         oneColor = m_changingColors[random];
         material.color = oneColor;
+    }
+
+    private void HurdlesColorChange()
+    {
+        GameObject circle = GameObject.Find("Circle" + m_circleNo);
+        if (circle != null)
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                if (circle.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>())
+                {
+                    circle.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().material.color = oneColor;
+                }
+            }
+        }
     }
 
     public static void CircleEnd()
@@ -166,6 +219,73 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public static void DestroyCircles()
+    {
+        GameObject[] circleArray = GameObject.FindGameObjectsWithTag("circle");
+        if (circleArray != null)
+        {
+            foreach (var circle in circleArray)
+            {
+                Destroy(circle);
+            }
+        }
+    }
+
+    private void KillTween(bool isEnabled)
+    {
+        GameObject circle = GameObject.Find("Circle" + m_circleNo);
+        if (circle != null)
+        {
+            if (circle.GetComponent<iTween>())
+            {
+                circle.GetComponent<iTween>().enabled = !isEnabled;
+            }
+        }
+    }
+    public void RestartGame()
+    {
+        StartCoroutine(RestartGameRoutine());
+    }
+
+    private IEnumerator RestartGameRoutine()
+    {
+        circleHits = 0;
+
+        levelCount = PlayerPrefs.GetInt("C_Level");
+        levelCount = 1;
+        PlayerPrefs.SetInt("C_Level", levelCount);
+
+        yield return new WaitForSeconds(.1f);
+        DestroyCircles();
+        StartCoroutine(m_uiHandler.RestartLevelRoutine());
+
+        HandleStart();
+
+        m_ballScript.canShoot = true;
+    }
+
+    public void LevelFailedG()
+    {
+        StartCoroutine(LevelFailedGRoutine());
+    }
+
+    private IEnumerator LevelFailedGRoutine()
+    {
+        circleHits = 0;
+
+        levelCount = PlayerPrefs.GetInt("C_Level");
+        levelCount = 1;
+        PlayerPrefs.SetInt("C_Level", levelCount);
+
+        yield return new WaitForSeconds(.1f);
+
+        StartCoroutine(m_uiHandler.RestartLevelRoutine());
+
+        HandleStart();
+
+        m_ballScript.canShoot = true;
+    }
+
     public void NewLevel()
     {
         StartCoroutine(NewLevelRoutine());
@@ -174,15 +294,28 @@ public class GameManager : MonoBehaviour
     private IEnumerator NewLevelRoutine()
     {
         circleHits = 0;
-        uiHandler.nextLevelButton.gameObject.SetActive(false);
+        m_uiHandler.nextLevelButton.gameObject.SetActive(false);
 
-        StartCoroutine(uiHandler.NewLevelScreen());
+        StartCoroutine(m_uiHandler.NewLevelScreen());
+
+        yield return new WaitForSeconds(.1f);
 
         levelCount = PlayerPrefs.GetInt("C_Level");
         levelCount++;
         PlayerPrefs.SetInt("C_Level", levelCount);
-        yield return new WaitForSeconds(.1f);
 
         HandleStart();
+        m_background.ChangeBackground();
+        m_ballScript.canShoot = true;
     }
+
+    public void BuyBalls()
+    {
+        ballsCount = ballsCount + 3;
+        StartCoroutine(m_uiHandler.RestartLevelRoutine());
+        m_audioManager.PlayCompleteSound();
+        KillTween(false);
+        m_ballScript.canShoot = true;
+    }
+
 }

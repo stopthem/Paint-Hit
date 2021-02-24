@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-public class MainMenu : MonoBehaviour
+public class Background : MonoBehaviour
 {
     public Sprite[] spriteArray;
 
@@ -10,6 +10,11 @@ public class MainMenu : MonoBehaviour
 
     private void Start()
     {
-        image.sprite = spriteArray[Random.Range(0,4)];
+        ChangeBackground();
+    }
+
+    public void ChangeBackground()
+    {
+        image.sprite = spriteArray[Random.Range(0, 4)];
     }
 }
